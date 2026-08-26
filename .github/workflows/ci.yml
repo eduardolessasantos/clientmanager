@@ -1,0 +1,30 @@
+name: CI Build & Test Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    name: Build & Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore ClientManager.sln
+
+    - name: Build solution
+      run: dotnet build ClientManager.sln --configuration Release --no-restore
+
+    - name: Run unit & integration tests
+      run: dotnet test ClientManager.sln --configuration Release --no-build --verbosity normal

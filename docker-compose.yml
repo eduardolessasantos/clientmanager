@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  clientmanager-db:
+    image: mysql:8.0
+    container_name: clientmanager-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "270523"
+      MYSQL_DATABASE: "clientmanager_db"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/cria_banco.sql:/docker-entrypoint-initdb.d/cria_banco.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p270523"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  clientmanager-api:
+    image: clientmanager-api
+    container_name: clientmanager-api
+    build:
+      context: .
+      dockerfile: src/ClientManager.Api/Dockerfile
+    restart: always
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=clientmanager-db;Database=clientmanager_db;User=root;Password=270523;
+      - JwtSettings__SecretKey=ClientManager_Secret_JWT_Key_2026_Super_Secure_Key!
+    depends_on:
+      clientmanager-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/swagger/index.html || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  clientmanager-web:
+    image: clientmanager-web
+    container_name: clientmanager-web
+    build:
+      context: .
+      dockerfile: src/ClientManager.Web/Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ApiSettings__BaseUrl=http://clientmanager-api:8080/
+    depends_on:
+      - clientmanager-api
+
+volumes:
+  mysql-data:
