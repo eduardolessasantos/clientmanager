@@ -482,3 +482,4 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+/Proposta_Sistema_Gerenciamento_Cientes.pdf
